@@ -16,7 +16,7 @@
 
   <ItemGroup Condition="'$(AotPublishing)' != 'true'">
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="8.0.*" />
-    <PackageReference Include="Swashbuckle.AspNetCore" Version="6.6.2" />
+    <PackageReference Include="SwaggerUI.AspNetCore" Version="5.29.0" />
     <PackageReference Include="Swashbuckle.AspNetCore.SwaggerGen" Version="6.6.2" />
   </ItemGroup>
 

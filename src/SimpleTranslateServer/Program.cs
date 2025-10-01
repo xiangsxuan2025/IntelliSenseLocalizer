@@ -36,7 +36,7 @@ var app = builder.Build();
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
-    app.UseSwaggerUI();
+    app.MapSwaggerUI(openApiEndpoint: "/swagger/v1/swagger.json");
 }
 
 #endif

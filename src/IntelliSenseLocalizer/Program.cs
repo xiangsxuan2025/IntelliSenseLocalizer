@@ -20,7 +20,7 @@ internal partial class Program
 {
     private static readonly LoggingLevelSwitch s_consoleLoggingLevelSwitch = new(LogEventLevel.Verbose);
 
-    private static readonly Option<int?> s_logLevelOption = new(new[] { "-ll", "--log-level" }, Resources.StringOptionLogLevelDescription);
+    private static readonly Option<int?> s_logLevelOption = new(["-ll", "--log-level"], Resources.StringOptionLogLevelDescription);
 
     private static Microsoft.Extensions.Logging.ILogger s_logger = null!;
 

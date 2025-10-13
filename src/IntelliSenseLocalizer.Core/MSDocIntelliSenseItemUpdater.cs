@@ -164,7 +164,7 @@ public class MSDocIntelliSenseItemUpdater : IIntelliSenseItemUpdater
             return _htmlNode.SelectNodes(".//p")
                         ?? _htmlNode.SelectNodes(".//li")
                         ?? (_htmlNode.Name == "p" ? new[] { _htmlNode }.AsEnumerable() : null)
-                        ?? new[] { HtmlNode.CreateNode("<p tags=\"emptyNode\" />") };
+                        ?? [HtmlNode.CreateNode("<p tags=\"emptyNode\" />")];
         }
 
         var contentLines = FindNode(htmlNode).Select(x => x.InnerHtml).ToArray();

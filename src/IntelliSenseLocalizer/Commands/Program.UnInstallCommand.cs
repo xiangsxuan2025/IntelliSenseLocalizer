@@ -14,7 +14,7 @@ internal partial class Program
         var uninstallCommand = new Command("uninstall", Resources.StringCMDUnInstallDescription);
         Argument<string> monikerArgument = new("moniker", Resources.StringCMDUnInstallArgumentMonikerDescription);
         Argument<string> localeArgument = new("locale", () => LocalizerEnvironment.CurrentLocale, Resources.StringCMDUnInstallArgumentLocaleDescription);
-        Option<string> targetOption = new(new[] { "-t", "--target" }, () => LocalizerEnvironment.DefaultSdkRoot, Resources.StringCMDUnInstallOptionTargetDescription);
+        Option<string> targetOption = new(["-t", "--target"], () => LocalizerEnvironment.DefaultSdkRoot, Resources.StringCMDUnInstallOptionTargetDescription);
 
         uninstallCommand.Add(monikerArgument);
         uninstallCommand.Add(localeArgument);

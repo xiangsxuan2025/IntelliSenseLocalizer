@@ -38,7 +38,7 @@ public static class MSDocPageAnalyser
             var version = intelliSenseItems.First().IntelliSenseFileDescriptor.Moniker[^3..];
 
             var memberRootNodes = htmlRootNode.SelectNodes("//div[@class=\"memberInfo\"]")?
-                                    .Where(x => x.ParentNode.Attributes["data-moniker"].Value.Split(" ").Any(z => z.EndsWith(version)));
+                                  .Where(x => x.ParentNode.Attributes["data-moniker"].Value.Split(" ").Any(z => z.EndsWith(version)));
             if (memberRootNodes?.Any() == true)
             {
                 return memberRootNodes.Select(x =>
@@ -50,12 +50,13 @@ public static class MSDocPageAnalyser
                 }).ToArray();
             }
 
-            var memberRootNode = htmlRootNode.SelectSingleNode("//div[@class=\"content \"]")?.SelectSingleNode(".//div[@class=\"summaryHolder\"]")?.ParentNode
-                                ?? htmlRootNode.SelectSingleNode("//div[@class=\"content\"]")?.SelectSingleNode(".//div[@class=\"summaryHolder\"]")?.ParentNode
-                                 ?? htmlRootNode.SelectSingleNode("//div[@class=\"content \"]")
-                                 ?? htmlRootNode.SelectSingleNode("//div[@class=\"content\"]");
+            //查找至少包含一个div子节点的 <div class="content"></div>
+            var memberRootNode = htmlRootNode.SelectSingleNode("//div[@class=\"content \"][div]")?.SelectSingleNode(".//div[@class=\"summaryHolder\"]")?.ParentNode
+                                ?? htmlRootNode.SelectSingleNode("//div[@class=\"content\"][div]")?.SelectSingleNode(".//div[@class=\"summaryHolder\"]")?.ParentNode
+                                 ?? htmlRootNode.SelectSingleNode("//div[@class=\"content \"][div]")
+                                 ?? htmlRootNode.SelectSingleNode("//div[@class=\"content\"][div]");
 
-            return new[] { CreatePageAnalysisResult(url, apiName, memberRootNode, intelliSenseItems) };
+            return [CreatePageAnalysisResult(url, apiName, memberRootNode, intelliSenseItems)];
         }
         else
         {
@@ -142,13 +143,13 @@ public static class MSDocPageAnalyser
 
         if (currentGroupItem?.Element.GetReturnsNodes().Count > 0)
         {
-            returnNode = htmlNode.SelectSingleNode("./dl[@class=\"propertyInfo\"]/following-sibling::p")
+            returnNode = htmlNode.SelectSingleNode("./div[@class=\"propertyInfo\"]/following-sibling::p")
 
-                        ?? htmlNode.SelectNodes(".//h4")
-                                .ElementAtOrDefault(parameters.Any() ? 1 : 0)?
-                                .SelectSingleNode(".//following-sibling::p")
+                ?? htmlNode.SelectNodes(".//h4")
+                        .ElementAtOrDefault(parameters.Any() ? 1 : 0)?
+                        .SelectSingleNode(".//following-sibling::p")
 
-                        ?? HtmlNode.CreateNode("<p/>");
+                ?? HtmlNode.CreateNode("<p/>");
         }
 
         return new MSDocPageAnalysisResult(url, uniqueKey, parameters, fields)

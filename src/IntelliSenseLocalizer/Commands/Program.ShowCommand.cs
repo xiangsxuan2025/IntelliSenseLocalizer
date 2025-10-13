@@ -11,7 +11,7 @@ internal partial class Program
     {
         var showCommand = new Command("show", Resources.StringCMDShowDescription);
 
-        var filterOption = new Option<string>(new[] { "-f", "--filter" }, Resources.StringOptionFilterDescription);
+        var filterOption = new Option<string>(["-f", "--filter"], Resources.StringOptionFilterDescription);
 
         {
             var showInstalledApplicationPacksCommand = new Command("packs", Resources.StringCMDShowPacksDescription)
@@ -25,8 +25,8 @@ internal partial class Program
         }
 
         {
-            var packNameOption = new Option<string>(new[] { "-p", "--pack" }, Resources.StringCMDShowOptionPackDescription);
-            var monikerOption = new Option<string>(new[] { "-m", "--moniker" }, Resources.StringCMDShowOptionMonikerDescription);
+            var packNameOption = new Option<string>(["-p", "--pack"], Resources.StringCMDShowOptionPackDescription);
+            var monikerOption = new Option<string>(["-m", "--moniker"], Resources.StringCMDShowOptionMonikerDescription);
 
             var showInstalledApplicationPackRefsCommand = new Command("refs", Resources.StringCMDShowPackRefsDescription)
             {

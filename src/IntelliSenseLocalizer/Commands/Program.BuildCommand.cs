@@ -51,14 +51,14 @@ internal partial class Program
 
     private static Command BuildBuildCommand()
     {
-        var packNameOption = new Option<string>(new[] { "-p", "--pack" }, Resources.StringCMDBuildOptionPackDescription);
-        var monikerOption = new Option<string>(new[] { "-m", "--moniker" }, Resources.StringCMDBuildOptionMonikerDescription);
-        var localeOption = new Option<string>(new[] { "-l", "--locale" }, () => LocalizerEnvironment.CurrentLocale, Resources.StringCMDBuildOptionLocaleDescription);
-        var contentCompareTypeOption = new Option<ContentCompareType>(new[] { "-cc", "--content-compare" }, () => ContentCompareType.OriginFirst, Resources.StringCMDBuildOptionContentCompareDescription);
-        var separateLineOption = new Option<string?>(new[] { "-sl", "--separate-line" }, Resources.StringCMDBuildOptionSeparateLineDescription);
-        var outputOption = new Option<string>(new[] { "-o", "--output" }, () => LocalizerEnvironment.OutputRoot, Resources.StringCMDBuildOptionOutputDescription);
-        var parallelCountOption = new Option<int>(new[] { "-pc", "--parallel-count" }, () => 2, Resources.StringCMDBuildOptionParallelCountDescription);
-        var nocacheOption = new Option<bool>(new[] { "-nc", "--no-cache" }, () => false, Resources.StringCMDBuildOptionNoCacheDescription);
+        var packNameOption = new Option<string>(["-p", "--pack"], Resources.StringCMDBuildOptionPackDescription);
+        var monikerOption = new Option<string>(["-m", "--moniker"], Resources.StringCMDBuildOptionMonikerDescription);
+        var localeOption = new Option<string>(["-l", "--locale"], () => LocalizerEnvironment.CurrentLocale, Resources.StringCMDBuildOptionLocaleDescription);
+        var contentCompareTypeOption = new Option<ContentCompareType>(["-cc", "--content-compare"], () => ContentCompareType.OriginFirst, Resources.StringCMDBuildOptionContentCompareDescription);
+        var separateLineOption = new Option<string?>(["-sl", "--separate-line"], Resources.StringCMDBuildOptionSeparateLineDescription);
+        var outputOption = new Option<string>(["-o", "--output"], () => LocalizerEnvironment.OutputRoot, Resources.StringCMDBuildOptionOutputDescription);
+        var parallelCountOption = new Option<int>(["-pc", "--parallel-count"], () => 2, Resources.StringCMDBuildOptionParallelCountDescription);
+        var nocacheOption = new Option<bool>(["-nc", "--no-cache"], () => false, Resources.StringCMDBuildOptionNoCacheDescription);
 
         var buildCommand = new Command("build", Resources.StringCMDBuildDescription)
         {

@@ -1,0 +1,12 @@
+<Solution>
+  <Folder Name="/Solution Items/">
+    <File Path="Directory.Build.props" />
+    <File Path="README.md" />
+    <File Path="README.zh-cn.md" />
+  </Folder>
+  <Folder Name="/src/">
+    <Project Path="src/IntelliSenseLocalizer.Core/IntelliSenseLocalizer.Core.csproj" />
+    <Project Path="src/IntelliSenseLocalizer/IntelliSenseLocalizer.csproj" />
+    <Project Path="src/SimpleTranslateServer/SimpleTranslateServer.csproj" />
+  </Folder>
+</Solution>

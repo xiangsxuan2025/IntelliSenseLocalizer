@@ -8,7 +8,7 @@ public enum ContentCompareType
     /// <summary>
     /// 默认
     /// </summary>
-    Default = OriginFirst,
+    Default = 0,
 
     /// <summary>
     /// 原始内容靠前

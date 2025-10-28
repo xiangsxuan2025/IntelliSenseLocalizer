@@ -87,6 +87,11 @@ internal partial class Program
                                                        int parallelCount,
                                                        int? logLevel)
     {
+        if (contentCompareType == ContentCompareType.Default)
+        {
+            contentCompareType = ContentCompareType.OriginFirst;
+        }
+
         locale = string.IsNullOrWhiteSpace(locale) ? LocalizerEnvironment.CurrentLocale : locale;
 
         if (string.IsNullOrWhiteSpace(locale))

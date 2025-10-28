@@ -52,6 +52,11 @@ internal partial class Program
 
             autoInstallCommand.SetHandler<string, string, string, ContentCompareType, bool>((string target, string monikers, string locale, ContentCompareType contentCompareType, bool copyToNugetGlobalCache) =>
             {
+                if (contentCompareType == ContentCompareType.Default)
+                {
+                    contentCompareType = ContentCompareType.OriginFirst;
+                }
+
                 try
                 {
                     var applicationPacks = DotNetEnvironmentUtil.GetAllApplicationPacks(DotNetEnvironmentUtil.GetSDKPackRoot(target)).ToArray();
@@ -501,7 +506,7 @@ internal partial class Program
         var seg = fileName.Split('@');
         moniker = string.Empty;
         locale = string.Empty;
-        contentCompareType = ContentCompareType.Default;
+        contentCompareType = ContentCompareType.OriginFirst;
         if (seg.Length != 3)
         {
             return false;

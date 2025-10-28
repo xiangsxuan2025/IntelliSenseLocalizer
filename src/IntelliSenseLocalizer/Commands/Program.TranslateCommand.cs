@@ -79,6 +79,11 @@ internal partial class Program
                                                            bool isPatch,
                                                            int? logLevel)
     {
+        if (contentCompareType == ContentCompareType.Default)
+        {
+            contentCompareType = ContentCompareType.OriginFirst;
+        }
+
         if (!File.Exists(file))
         {
             s_logger.LogCritical("xml file \"{File}\" not found.", file);

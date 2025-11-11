@@ -1,0 +1,61 @@
+﻿<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:IntelliSenseLocalizer.App.ViewModels"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:system="using:System"
+        xmlns:m="using:IntelliSenseLocalizer.App.Models"
+        xmlns:c="using:IntelliSenseLocalizer.App.Converters"
+        mc:Ignorable="d" d:DesignWidth="520" d:DesignHeight="230"
+        SizeToContent="WidthAndHeight"
+        x:Class="IntelliSenseLocalizer.App.Views.MainWindow"
+        x:DataType="vm:MainWindowViewModel"
+        Icon="/Assets/avalonia-logo.ico"
+        Title="下载本地化的 .NET IntelliSense 文件"
+        CanResize="False"
+        WindowStartupLocation="CenterOwner">
+
+    <Design.DataContext>
+        <!-- This only sets the DataContext for the previewer in an IDE,
+        to set the actual DataContext for runtime, set the DataContext property in code (look at App.axaml.cs) -->
+        <vm:MainWindowViewModel/>
+    </Design.DataContext>
+    <StackPanel Orientation="Vertical">
+        <Grid ColumnDefinitions="Auto, *" RowDefinitions="Auto, Auto, Auto, Auto">
+            <TextBlock Grid.Row="0" Grid.Column="0"
+                       Text="保留英文方式" />
+            <ComboBox Grid.Row="0" Grid.Column="1"
+                      ItemsSource="{Binding Source={x:Static m:KeepOriginalMode.Supported}}"
+                      SelectedItem="{Binding ContentCompareType, Mode=TwoWay}" >
+
+                <ComboBox.ItemTemplate>
+                    <DataTemplate DataType="m:KeepOriginalMode">
+                        <StackPanel Orientation="Vertical">
+                            <TextBlock  Text="{Binding Desc}" Margin="8,0" FontSize="16"/>
+                            <Image Height="150"  Source="{Binding  Mode, Converter={x:Static c:ModeBitmapConverter.Instance}}" Margin="8,0"/>
+                        </StackPanel>
+                    </DataTemplate>
+                </ComboBox.ItemTemplate>
+
+                <ComboBox.SelectionBoxItemTemplate>
+                    <DataTemplate DataType="m:KeepOriginalMode">
+                        <TextBlock  Text="{Binding Desc}" Margin="8,0" FontSize="11"/>
+                    </DataTemplate>
+                </ComboBox.SelectionBoxItemTemplate>
+            </ComboBox>
+            <TextBlock Grid.Row="1" Grid.Column="0"
+                       Text=".Net版本" />
+            <ComboBox Grid.Row="1" Grid.Column="1"
+                      ItemsSource="{Binding Source={x:Static m:DotNetVersion.Supported}}"
+                      SelectedItem="{Binding DotnetVersion, Mode=TwoWay}" >
+
+            </ComboBox>
+
+        </Grid>
+        <Button
+        Classes="flat primary"
+        Content="确定"
+        Command="{Binding StartToTransAsync}"
+        HotKey="Enter"/>
+    </StackPanel>
+</Window>

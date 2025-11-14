@@ -6,18 +6,32 @@ using Microsoft.Extensions.Logging;
 
 namespace IntelliSenseLocalizer.ThirdParty;
 
+/// <summary>
+/// 本地化 IntelliSense 翻译器
+/// 负责将 XML 文档内容翻译为目标语言
+/// </summary>
 public class LocalizeIntelliSenseTranslator
 {
     #region Private 字段
 
+    /// <summary>
+    /// Base62 编码器，用于生成内容版本标识
+    /// </summary>
     private static readonly IBaseAnyEncoder<char> s_base62Encoder = BaseAnyEncoding.CreateEncoder("0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz".AsSpan());
 
+    /// <summary>
+    /// 日志记录器
+    /// </summary>
     private readonly ILogger _logger;
 
     #endregion Private 字段
 
     #region Public 构造函数
 
+    /// <summary>
+    /// 初始化本地化 IntelliSense 翻译器
+    /// </summary>
+    /// <param name="logger">日志记录器</param>
     public LocalizeIntelliSenseTranslator(ILogger<LocalizeIntelliSenseTranslator> logger)
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
@@ -27,6 +41,12 @@ public class LocalizeIntelliSenseTranslator
 
     #region Public 方法
 
+    /// <summary>
+    /// 异步翻译 XML 文档
+    /// </summary>
+    /// <param name="context">翻译上下文</param>
+    /// <param name="cancellationToken">取消令牌</param>
+    /// <returns>表示异步翻译操作的任务</returns>
     public virtual async Task TranslateAsync(TranslateContext context, CancellationToken cancellationToken)
     {
         var sourceXmlDocument = new XmlDocument();
@@ -43,7 +63,7 @@ public class LocalizeIntelliSenseTranslator
             outputXmlDocument = await TranslateAsync(context, sourceXmlDocument, cancellationToken);
         }
 
-        //排序内容
+        // 排序内容
         var membersNode = GetMembersNode(outputXmlDocument);
         OrderChildNodesByNameAttribute(membersNode);
 
@@ -59,6 +79,13 @@ public class LocalizeIntelliSenseTranslator
 
     #region Protected 方法
 
+    /// <summary>
+    /// 补丁模式翻译 - 只翻译新增或修改的内容
+    /// </summary>
+    /// <param name="context">翻译上下文</param>
+    /// <param name="sourceXmlDocument">源 XML 文档</param>
+    /// <param name="cancellationToken">取消令牌</param>
+    /// <returns>翻译后的 XML 文档</returns>
     protected virtual async Task<XmlDocument> PatchTranslateAsync(TranslateContext context, XmlDocument sourceXmlDocument, CancellationToken cancellationToken)
     {
         var patchXmlDocument = new XmlDocument();
@@ -83,19 +110,19 @@ public class LocalizeIntelliSenseTranslator
 
         foreach (var (name, outputNode) in outputMembers)
         {
-            //移除已不存在的节点
+            // 移除已不存在的节点
             if (!sourceMembers.TryGetValue(name, out var sourceNode))
             {
                 outputNode.ParentNode!.RemoveChild(outputNode);
             }
-            else    //处理还存在节点的子节点
+            else    // 处理还存在节点的子节点
             {
                 var sourceChildNodesMap = GetProcessableChildNodesMap(sourceNode);
                 var outputChildNodesMap = GetProcessableChildNodesMap(outputNode);
 
                 foreach (var (outputChildName, outputChild) in outputChildNodesMap)
                 {
-                    //移除已不存在的子节点
+                    // 移除已不存在的子节点
                     if (!sourceChildNodesMap.TryGetValue(outputChildName, out var sourceChild)
                         || sourceChild.Name != outputChild.Name)
                     {
@@ -123,7 +150,7 @@ public class LocalizeIntelliSenseTranslator
                     }
                 }
 
-                //添加子节点
+                // 添加子节点
                 foreach (var (sourceChildName, sourceChild) in sourceChildNodesMap)
                 {
                     if (!outputChildNodesMap.TryGetValue(sourceChildName, out var outputChild))
@@ -141,7 +168,7 @@ public class LocalizeIntelliSenseTranslator
 
         foreach (var (name, node) in sourceMembers)
         {
-            //添加缺少节点
+            // 添加缺少节点
             if (!outputMembers.TryGetValue(name, out var outputNode))
             {
                 var importedNode = outputXmlDocument.ImportNode(node, true);
@@ -156,6 +183,13 @@ public class LocalizeIntelliSenseTranslator
         return outputXmlDocument;
     }
 
+    /// <summary>
+    /// 完整模式翻译 - 翻译所有内容
+    /// </summary>
+    /// <param name="context">翻译上下文</param>
+    /// <param name="sourceXmlDocument">源 XML 文档</param>
+    /// <param name="cancellationToken">取消令牌</param>
+    /// <returns>翻译后的 XML 文档</returns>
     protected virtual async Task<XmlDocument> TranslateAsync(TranslateContext context, XmlDocument sourceXmlDocument, CancellationToken cancellationToken)
     {
         var outputXmlDocument = (XmlDocument)sourceXmlDocument.Clone();
@@ -164,7 +198,7 @@ public class LocalizeIntelliSenseTranslator
 
         await TranslateNodesAsync(context, nodes, cancellationToken);
 
-        //排序
+        // 排序
         foreach (var item in SelectMembersMap(outputXmlDocument).SelectMany(m => SelectProcessableChildNodes(m.Value)))
         {
             OrderChildNodesByNameAttribute(item);
@@ -177,16 +211,32 @@ public class LocalizeIntelliSenseTranslator
 
     #region Private 方法
 
+    /// <summary>
+    /// 获取内容的版本标识（基于 CRC32 哈希的 Base62 编码）
+    /// </summary>
+    /// <param name="content">内容字符串</param>
+    /// <returns>版本标识字符串</returns>
     private static string GetContentVersion(string content)
     {
         return s_base62Encoder.EncodeToString(Crc32.Hash(Encoding.UTF8.GetBytes(content.Trim())));
     }
 
+    /// <summary>
+    /// 获取成员节点
+    /// </summary>
+    /// <param name="outputXmlDocument">输出 XML 文档</param>
+    /// <returns>成员节点</returns>
     private static XmlNode GetMembersNode(XmlDocument outputXmlDocument)
     {
         return outputXmlDocument.SelectSingleNode("/doc/members")!;
     }
 
+    /// <summary>
+    /// 按指定键对子节点进行排序
+    /// </summary>
+    /// <typeparam name="TOrderKey">排序键类型</typeparam>
+    /// <param name="node">要排序的节点</param>
+    /// <param name="keySelector">键选择器</param>
     private static void OrderChildNodes<TOrderKey>(XmlNode node, Func<XmlNode, TOrderKey> keySelector)
     {
         List<XmlAttribute>? attributes = null;
@@ -216,16 +266,30 @@ public class LocalizeIntelliSenseTranslator
         }
     }
 
+    /// <summary>
+    /// 按名称属性对子节点进行排序
+    /// </summary>
+    /// <param name="xmlNode">要排序的 XML 节点</param>
     private static void OrderChildNodesByNameAttribute(XmlNode xmlNode)
     {
         OrderChildNodes(xmlNode, m => m.Attributes?.GetNamedItem("name")?.Value ?? string.Empty);
     }
 
+    /// <summary>
+    /// 获取可处理子节点的字典
+    /// </summary>
+    /// <param name="xmlNode">XML 节点</param>
+    /// <returns>子节点字典</returns>
     private Dictionary<string, XmlNode> GetProcessableChildNodesMap(XmlNode xmlNode)
     {
         return SelectProcessableChildNodes(xmlNode).ToDictionary(m => $"{m.Name}:{m.Attributes!["name"]?.Value}", m => m, StringComparer.OrdinalIgnoreCase);
     }
 
+    /// <summary>
+    /// 选择成员映射
+    /// </summary>
+    /// <param name="xmlDocument">XML 文档</param>
+    /// <returns>成员节点字典</returns>
     private Dictionary<string, XmlNode> SelectMembersMap(XmlDocument xmlDocument)
     {
         var members = SelectNodes(xmlDocument, "/doc/members/member");
@@ -233,6 +297,12 @@ public class LocalizeIntelliSenseTranslator
         return members.ToDictionary(m => $"{m.Name}:{m.Attributes!["name"]?.Value}", m => m, StringComparer.OrdinalIgnoreCase);
     }
 
+    /// <summary>
+    /// 选择多个 XPath 的节点
+    /// </summary>
+    /// <param name="xmlDocument">XML 文档</param>
+    /// <param name="xpaths">XPath 表达式数组</param>
+    /// <returns>节点列表</returns>
     private List<XmlNode> SelectNodes(XmlDocument xmlDocument, params string[] xpaths)
     {
         List<XmlNode> result = [];
@@ -246,6 +316,11 @@ public class LocalizeIntelliSenseTranslator
         return result;
     }
 
+    /// <summary>
+    /// 选择可处理的子节点
+    /// </summary>
+    /// <param name="xmlNode">XML 节点</param>
+    /// <returns>可处理子节点列表</returns>
     private List<XmlNode> SelectProcessableChildNodes(XmlNode xmlNode)
     {
         if (xmlNode is not XmlElement xmlElement)
@@ -270,6 +345,13 @@ public class LocalizeIntelliSenseTranslator
         }
     }
 
+    /// <summary>
+    /// 异步翻译节点列表
+    /// </summary>
+    /// <param name="context">翻译上下文</param>
+    /// <param name="nodes">要翻译的节点列表</param>
+    /// <param name="cancellationToken">取消令牌</param>
+    /// <returns>表示异步翻译操作的任务</returns>
     private async Task TranslateNodesAsync(TranslateContext context, List<XmlNode> nodes, CancellationToken cancellationToken)
     {
         var contentTranslator = context.ContentTranslator;

@@ -10,22 +10,23 @@ using Microsoft.Extensions.Logging.Abstractions;
 namespace IntelliSenseLocalizer;
 
 /// <summary>
-/// 基于微软文档的更新器
+/// 基于微软文档的 IntelliSense 项更新器
+/// 通过分析微软在线文档来更新 IntelliSense 项的本地化内容
 /// </summary>
 public class MSDocIntelliSenseItemUpdater : IIntelliSenseItemUpdater
 {
     private readonly ContentCompareType _contentCompareType;
-
     private readonly IIntelliSenseItemWebPageDownloader _downloader;
-
     private readonly GenerateContext _generateContext;
-
     private readonly ILogger _logger;
-
     private readonly string? _separateLine;
-
     private bool _disposedValue;
 
+    /// <summary>
+    /// 初始化基于微软文档的更新器
+    /// </summary>
+    /// <param name="generateContext">生成上下文</param>
+    /// <param name="logger">日志记录器</param>
     public MSDocIntelliSenseItemUpdater(GenerateContext generateContext, ILogger logger)
     {
         _generateContext = generateContext ?? throw new ArgumentNullException(nameof(generateContext));
@@ -36,6 +37,12 @@ public class MSDocIntelliSenseItemUpdater : IIntelliSenseItemUpdater
         _downloader = new DefaultIntelliSenseItemWebPageDownloader(generateContext.CultureInfo, LocalizerEnvironment.CacheRoot, generateContext.ParallelCount);
     }
 
+    /// <summary>
+    /// 异步更新 IntelliSense 项组
+    /// </summary>
+    /// <param name="intelliSenseItemGroup">要更新的项组</param>
+    /// <param name="cancellationToken">取消令牌</param>
+    /// <returns>表示异步更新操作的任务</returns>
     public async Task UpdateAsync(IGrouping<string, IntelliSenseItemDescriptor> intelliSenseItemGroup, CancellationToken cancellationToken)
     {
         var currentGroupItems = intelliSenseItemGroup.Reverse().ToArray();
@@ -44,25 +51,27 @@ public class MSDocIntelliSenseItemUpdater : IIntelliSenseItemUpdater
 
         try
         {
+            // 下载第一个项的网页文档
             var (html, url) = await _downloader.DownloadAsync(currentGroupItems.First(), false, default);
 
             var htmlDocument = new HtmlDocument();
             htmlDocument.LoadHtml(html);
 
+            // 分析 HTML 文档
             var analysisResults = MSDocPageAnalyser.AnalysisHtmlDocument(url, htmlDocument, currentGroupItems);
 
-            //原始数据和分析结果都只有一个，直接处理
+            // 原始数据和分析结果都只有一个，直接处理
             if (analysisResults.Length == 1 && currentGroupItems.Length == 1)
             {
                 UpdateIntelliSenseItem(currentGroupItems[0], analysisResults[0]);
                 return;
             }
 
-            //匹配多个结果进行处理
+            // 匹配多个结果进行处理
             var analysisResultDictionary = analysisResults.ToDictionary(m => m.UniqueKey);
             foreach (var member in currentGroupItems)
             {
-                if (!analysisResultDictionary.TryGetValue(member.UniqueKey, out var pageAnalysisResult))    //处理字段
+                if (!analysisResultDictionary.TryGetValue(member.UniqueKey, out var pageAnalysisResult))    // 处理字段
                 {
                     var fieldsPageAnalysisResult = analysisResults.Where(m => m.Fields.ContainsKey(member.UniqueKey)).FirstOrDefault();
                     if (fieldsPageAnalysisResult is null)
@@ -76,7 +85,7 @@ public class MSDocIntelliSenseItemUpdater : IIntelliSenseItemUpdater
 
                     UpdateIntelliSenseItem(member, fieldsPageAnalysisResult);
                 }
-                else    //处理方法等成员
+                else    // 处理方法等成员
                 {
                     analysisResultDictionary.Remove(member.UniqueKey);
                     UpdateIntelliSenseItem(member, pageAnalysisResult);
@@ -93,12 +102,12 @@ public class MSDocIntelliSenseItemUpdater : IIntelliSenseItemUpdater
     #region Process
 
     /// <summary>
-    /// 使用<paramref name="refDictionary"/>中<paramref name="refKey"/>项的值，替换<paramref name="linkHtmlNode"/>中的对应内容
+    /// 使用引用字典中的项替换链接 HTML 节点中的对应内容
     /// </summary>
-    /// <param name="descriptor"></param>
-    /// <param name="refDictionary"></param>
-    /// <param name="linkHtmlNode"></param>
-    /// <param name="refKey"></param>
+    /// <param name="descriptor">成员描述符</param>
+    /// <param name="refDictionary">引用字典</param>
+    /// <param name="linkHtmlNode">链接 HTML 节点</param>
+    /// <param name="refKey">引用键</param>
     protected virtual void ReplaceRefNodeContent(IntelliSenseItemDescriptor descriptor, Dictionary<string, XmlNode> refDictionary, HtmlNode linkHtmlNode, string refKey)
     {
         if (!refDictionary.TryGetValue(refKey, out var node))
@@ -110,11 +119,12 @@ public class MSDocIntelliSenseItemUpdater : IIntelliSenseItemUpdater
     }
 
     /// <summary>
-    /// 使用<paramref name="htmlNode"/>更新<paramref name="element"/>的信息
+    /// 使用 HTML 节点更新 XML 元素的内容
     /// </summary>
-    /// <param name="descriptor"></param>
-    /// <param name="element"></param>
-    /// <param name="htmlNode"></param>
+    /// <param name="descriptor">成员描述符</param>
+    /// <param name="element">要更新的 XML 元素</param>
+    /// <param name="htmlNode">包含内容的 HTML 节点</param>
+    /// <param name="analysisResult">页面分析结果（可选）</param>
     protected virtual void UpdateElementContent(IntelliSenseItemDescriptor descriptor, XmlElement element, HtmlNode htmlNode, MSDocPageAnalysisResult? analysisResult = null)
     {
         var originNodes = element.ChildNodes.ToList();
@@ -128,7 +138,7 @@ public class MSDocIntelliSenseItemUpdater : IIntelliSenseItemUpdater
 
         if (element.ChildNodes.Count > 1)
         {
-            //原始数据最后为一个节点为换行节点
+            // 原始数据最后为一个节点为换行节点
             if (element.ChildNodes[element.ChildNodes.Count - 1] is XmlElement lastElement
                 && lastElement.Name.EqualsOrdinalIgnoreCase("para"))
             {
@@ -140,6 +150,7 @@ public class MSDocIntelliSenseItemUpdater : IIntelliSenseItemUpdater
 
             if (refDictionary.Count > 0)
             {
+                // 处理内部链接
                 if (htmlNode.SelectNodes(".//a[@data-linktype!='external']") is HtmlNodeCollection aNodes)
                 {
                     foreach (var linkHtmlNode in aNodes)
@@ -148,6 +159,7 @@ public class MSDocIntelliSenseItemUpdater : IIntelliSenseItemUpdater
                         ReplaceRefNodeContent(descriptor, refDictionary, linkHtmlNode, linkKey);
                     }
                 }
+                // 处理代码引用
                 if (htmlNode.SelectNodes(".//code") is HtmlNodeCollection codeNodes)
                 {
                     foreach (var linkHtmlNode in codeNodes)
@@ -205,15 +217,15 @@ public class MSDocIntelliSenseItemUpdater : IIntelliSenseItemUpdater
             element.AppendChild(appendLastNode);
         }
 
-        //原内容在前，不需要更多处理
+        // 原内容在前，不需要更多处理
         if (_contentCompareType != ContentCompareType.OriginFirst)
         {
-            //移除原内容
+            // 移除原内容
             foreach (var item in originNodes)
             {
                 element.RemoveChild(item);
             }
-            //本地化内容在前，把原内容添加到最后
+            // 本地化内容在前，把原内容添加到最后
             if (_contentCompareType == ContentCompareType.LocaleFirst)
             {
                 AppendSeparateLine();
@@ -225,7 +237,7 @@ public class MSDocIntelliSenseItemUpdater : IIntelliSenseItemUpdater
             }
         }
 
-        //添加换行分割
+        // 添加换行分割
         void AppendSeparateLine()
         {
             element.AppendChild(element.CreateParaNode());
@@ -241,10 +253,10 @@ public class MSDocIntelliSenseItemUpdater : IIntelliSenseItemUpdater
     }
 
     /// <summary>
-    /// 更新<paramref name="descriptor"/>的信息
+    /// 使用分析结果更新 IntelliSense 项的信息
     /// </summary>
-    /// <param name="descriptor"></param>
-    /// <param name="analysisResult"></param>
+    /// <param name="descriptor">要更新的成员描述符</param>
+    /// <param name="analysisResult">页面分析结果</param>
     protected virtual void UpdateIntelliSenseItem(IntelliSenseItemDescriptor descriptor, MSDocPageAnalysisResult analysisResult)
     {
         switch (descriptor.MemberType)
@@ -304,12 +316,11 @@ public class MSDocIntelliSenseItemUpdater : IIntelliSenseItemUpdater
     }
 
     /// <summary>
-    /// 更新<paramref name="paramNodes"/>的参数列表
+    /// 更新参数节点列表
     /// </summary>
-    /// <param name="descriptor"></param>
-    /// <param name="paramNodes"></param>
-    /// <param name="analysisResult"></param>
-    ///
+    /// <param name="descriptor">成员描述符</param>
+    /// <param name="paramNodes">参数节点列表</param>
+    /// <param name="analysisResult">页面分析结果</param>
     protected virtual void UpdateParameterNodes(IntelliSenseItemDescriptor descriptor, XmlNodeList paramNodes, MSDocPageAnalysisResult analysisResult)
     {
         for (int i = 0; i < paramNodes.Count; i++)
@@ -328,11 +339,21 @@ public class MSDocIntelliSenseItemUpdater : IIntelliSenseItemUpdater
 
     #region Base
 
+    /// <summary>
+    /// 记录页面分析结果中未找到节点的日志
+    /// </summary>
+    /// <param name="member">成员描述符</param>
+    /// <param name="nodeName">节点名称</param>
     private void LogNotFoundNodeInPageAnalysisResult(IntelliSenseItemDescriptor member, string nodeName)
     {
         _logger.LogDebug("Not found {NodeName} for member {OriginName} in page analysis result.", nodeName, member.OriginName);
     }
 
+    /// <summary>
+    /// 运行操作并捕获异常记录为调试日志
+    /// </summary>
+    /// <param name="action">要执行的操作</param>
+    /// <param name="description">操作描述</param>
     private void RunAndLogExceptionsAsDebug(Action action, string description)
     {
         try
@@ -349,17 +370,27 @@ public class MSDocIntelliSenseItemUpdater : IIntelliSenseItemUpdater
 
     #region dispose
 
+    /// <summary>
+    /// 析构函数
+    /// </summary>
     ~MSDocIntelliSenseItemUpdater()
     {
         Dispose(disposing: false);
     }
 
+    /// <summary>
+    /// 释放资源
+    /// </summary>
     public void Dispose()
     {
         Dispose(disposing: true);
         GC.SuppressFinalize(this);
     }
 
+    /// <summary>
+    /// 释放托管和非托管资源
+    /// </summary>
+    /// <param name="disposing">是否正在 disposing</param>
     protected virtual void Dispose(bool disposing)
     {
         if (!_disposedValue)

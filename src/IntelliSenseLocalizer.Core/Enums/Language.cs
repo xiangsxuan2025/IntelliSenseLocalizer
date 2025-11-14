@@ -2,6 +2,10 @@
 
 namespace IntelliSenseLocalizer;
 
+/// <summary>
+/// 支持的语言枚举
+/// 包含所有可用的区域设置和对应的描述
+/// </summary>
 public enum Language
 {
     /// <summary>

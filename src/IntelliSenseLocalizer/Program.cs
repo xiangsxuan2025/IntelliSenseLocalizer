@@ -16,18 +16,40 @@ using Serilog.Events;
 
 namespace IntelliSenseLocalizer;
 
+/// <summary>
+/// IntelliSenseLocalizer 主程序类
+/// 负责命令行解析、依赖注入配置和新版本检查
+/// </summary>
 internal partial class Program
 {
+    /// <summary>
+    /// 控制台日志级别开关
+    /// </summary>
     private static readonly LoggingLevelSwitch s_consoleLoggingLevelSwitch = new(LogEventLevel.Verbose);
 
+    /// <summary>
+    /// 日志级别选项
+    /// </summary>
     private static readonly Option<int?> s_logLevelOption = new(["-ll", "--log-level"], Resources.StringOptionLogLevelDescription);
 
+    /// <summary>
+    /// 日志记录器实例
+    /// </summary>
     private static Microsoft.Extensions.Logging.ILogger s_logger = null!;
 
+    /// <summary>
+    /// 服务提供者实例
+    /// </summary>
     private static IServiceProvider s_serviceProvider = null!;
 
+    /// <summary>
+    /// 应用程序主入口点
+    /// </summary>
+    /// <param name="args">命令行参数</param>
+    /// <returns>退出代码</returns>
     private static int Main(string[] args)
     {
+        // 检查新版本
         if (TryCheckNewVersion(out var newVersion))
         {
             Console.WriteLine("-----------------------");
@@ -38,11 +60,14 @@ internal partial class Program
             Console.WriteLine("-----------------------");
         }
 
+        // 异步检查在线新版本（不等待）
         _ = TryGetNewVersionOnlineAsync();
 
+        // 构建依赖注入容器
         s_serviceProvider = BuildServiceProvider();
         s_logger = s_serviceProvider.GetRequiredService<ILogger<Program>>();
 
+        // 构建根命令
         var rootCommand = new RootCommand(Resources.StringRootCommandDescription)
         {
             BuildInstallCommand(),
@@ -59,11 +84,12 @@ internal partial class Program
         rootCommand.AddGlobalOption(s_logLevelOption);
         rootCommand.AddGlobalOption(customOption);
 
+        // 执行命令
         var result = rootCommand.Invoke(args);
 
         var optionParseResult = customOption.Parse(args);
 
-        // process like delay-exit-20s
+        // 处理自定义选项（如 delay-exit-20s）
         if (optionParseResult.CommandResult.GetValueForOption(customOption) is string customOptionString
             && Regex.Match(customOptionString, @"delay-exit-(\d+)s") is Match waitSecondsMatch
             && waitSecondsMatch.Groups.Count > 1
@@ -78,6 +104,11 @@ internal partial class Program
 
     #region Base
 
+    /// <summary>
+    /// 延迟退出进程
+    /// </summary>
+    /// <param name="waitSeconds">等待秒数</param>
+    /// <param name="exitCode">退出代码</param>
     [DoesNotReturn]
     private static void DelayExitProcess(int waitSeconds, int exitCode)
     {
@@ -93,10 +124,15 @@ internal partial class Program
         Environment.Exit(exitCode);
     }
 
+    /// <summary>
+    /// 构建服务提供者
+    /// </summary>
+    /// <returns>配置好的服务提供者</returns>
     private static ServiceProvider BuildServiceProvider()
     {
         var services = new ServiceCollection();
 
+        // 配置日志
         services.AddLogging(builder =>
         {
             var logger = new LoggerConfiguration()
@@ -108,6 +144,7 @@ internal partial class Program
             builder.AddSerilog(logger);
         });
 
+        // 添加 IntelliSenseLocalizer 服务
         services.AddIntelliSenseLocalizer();
 
 #if DEBUG
@@ -117,6 +154,11 @@ internal partial class Program
 #endif
     }
 
+    /// <summary>
+    /// 构建字符串过滤函数
+    /// </summary>
+    /// <param name="filterString">过滤字符串（支持正则表达式）</param>
+    /// <returns>过滤函数</returns>
     private static Func<string, bool> BuildStringFilterFunc(string filterString)
     {
         return string.IsNullOrEmpty(filterString)
@@ -124,6 +166,10 @@ internal partial class Program
                     : value => Regex.IsMatch(value, filterString, RegexOptions.IgnoreCase);
     }
 
+    /// <summary>
+    /// 设置日志级别
+    /// </summary>
+    /// <param name="logLevel">日志级别（0-5）</param>
     private static void SetLogLevel(int? logLevel)
     {
         if (logLevel is null)
@@ -138,6 +184,10 @@ internal partial class Program
         s_consoleLoggingLevelSwitch.MinimumLevel = level;
     }
 
+    /// <summary>
+    /// 输出消息并退出程序
+    /// </summary>
+    /// <param name="message">要输出的消息</param>
     [DoesNotReturn]
     private static void WriteMessageAndExit(string message)
     {
@@ -149,8 +199,16 @@ internal partial class Program
 
     #region new version check
 
+    /// <summary>
+    /// 新版本缓存文件路径
+    /// </summary>
     private static readonly string s_newVersionCacheFilePath = Path.Combine(LocalizerEnvironment.CacheRoot, "new_version");
 
+    /// <summary>
+    /// 尝试获取当前版本号
+    /// </summary>
+    /// <param name="version">输出参数，当前版本号</param>
+    /// <returns>如果成功获取返回 true，否则返回 false</returns>
     private static bool TryGetCurrentVersion([NotNullWhen(true)] out Version? version)
     {
         var currentVersionString = Assembly.GetEntryAssembly()?.GetCustomAttribute<AssemblyFileVersionAttribute>()?.Version;
@@ -164,6 +222,11 @@ internal partial class Program
         return true;
     }
 
+    /// <summary>
+    /// 尝试检查是否有新版本
+    /// </summary>
+    /// <param name="newVersion">输出参数，新版本号</param>
+    /// <returns>如果发现新版本返回 true，否则返回 false</returns>
     private static bool TryCheckNewVersion([NotNullWhen(true)] out Version? newVersion)
     {
         try
@@ -185,6 +248,9 @@ internal partial class Program
         return false;
     }
 
+    /// <summary>
+    /// 尝试从在线获取新版本信息
+    /// </summary>
     private static async Task TryGetNewVersionOnlineAsync()
     {
         try
@@ -194,9 +260,10 @@ internal partial class Program
                 return;
             }
 
+            // 获取 NuGet 索引
             var nugetIndex = await "https://api.nuget.org/v3/index.json".CreateHttpRequest()
-                                                                        .AutoRedirection(true)
-                                                                        .GetAsDynamicJsonAsync();
+                                                                    .AutoRedirection(true)
+                                                                    .GetAsDynamicJsonAsync();
 
             IEnumerable<dynamic> resources = nugetIndex!.resources;
 
@@ -212,8 +279,8 @@ internal partial class Program
             var searchQueryUrl = $"{searchQueryBaseUrl}?q=islocalizer&skip=0&take=10&prerelease=false&semVerLevel=2.0.0";
 
             var searchQueryResult = await searchQueryUrl.CreateHttpRequest()
-                                                        .AutoRedirection(true)
-                                                        .GetAsDynamicJsonAsync();
+                                                    .AutoRedirection(true)
+                                                    .GetAsDynamicJsonAsync();
 
             if (searchQueryResult is null)
             {
@@ -231,6 +298,7 @@ internal partial class Program
 
             IEnumerable<dynamic> versions = targetPacakgeInfo.versions;
 
+            // 查找比当前版本新的版本
             var newVersion = versions.Reverse().FirstOrDefault(m => Version.TryParse(m.version as string, out var version) && version > currentVersion);
 
             if (newVersion is null)
@@ -238,6 +306,7 @@ internal partial class Program
                 return;
             }
 
+            // 缓存新版本信息
             await File.WriteAllTextAsync(s_newVersionCacheFilePath, newVersion.version as string);
         }
         catch (Exception ex)

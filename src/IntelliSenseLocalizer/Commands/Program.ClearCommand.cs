@@ -6,6 +6,10 @@ namespace IntelliSenseLocalizer;
 
 internal partial class Program
 {
+    /// <summary>
+    /// 构建 clear 命令
+    /// </summary>
+    /// <returns>配置好的 clear 命令</returns>
     private static Command BuildClearCommand()
     {
         var clearCommand = new Command("clear", Resources.StringCMDClearDescription);
@@ -19,6 +23,10 @@ internal partial class Program
         return clearCommand;
     }
 
+    /// <summary>
+    /// 清理指定类型的文件或目录
+    /// </summary>
+    /// <param name="type">清理类型</param>
     private static void Clear(ClearType type)
     {
         try
@@ -56,16 +64,34 @@ internal partial class Program
         }
     }
 
+    /// <summary>
+    /// 清理类型枚举
+    /// </summary>
     private enum ClearType
     {
+        /// <summary>
+        /// 清理所有内容
+        /// </summary>
         All = 1,
 
+        /// <summary>
+        /// 只清理缓存
+        /// </summary>
         Cache = 1 << 1,
 
+        /// <summary>
+        /// 只清理输出
+        /// </summary>
         Output = 1 << 2,
 
+        /// <summary>
+        /// 只清理日志
+        /// </summary>
         Logs = 1 << 3,
 
+        /// <summary>
+        /// 只清理构建文件
+        /// </summary>
         Build = 1 << 4,
     }
 }

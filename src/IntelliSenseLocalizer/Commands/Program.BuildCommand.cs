@@ -12,10 +12,19 @@ namespace IntelliSenseLocalizer;
 
 internal partial class Program
 {
+    /// <summary>
+    /// 打包项目文件名
+    /// </summary>
     private const string PackCsprojFileName = "pack.csproj";
 
+    /// <summary>
+    /// NuGet 包名称
+    /// </summary>
     private const string NugetPackageName = "IntelliSenseLocalizer.LanguagePack";
 
+    /// <summary>
+    /// 打包项目文件内容模板
+    /// </summary>
     private const string PackCsprojContent = $@" <Project Sdk=""Microsoft.NET.Sdk"">
 
 	<PropertyGroup>
@@ -49,8 +58,13 @@ internal partial class Program
 
     #region Private 方法
 
+    /// <summary>
+    /// 构建 build 命令
+    /// </summary>
+    /// <returns>配置好的 build 命令</returns>
     private static Command BuildBuildCommand()
     {
+        // 定义命令选项
         var packNameOption = new Option<string>(["-p", "--pack"], Resources.StringCMDBuildOptionPackDescription);
         var monikerOption = new Option<string>(["-m", "--moniker"], Resources.StringCMDBuildOptionMonikerDescription);
         var localeOption = new Option<string>(["-l", "--locale"], () => LocalizerEnvironment.CurrentLocale, Resources.StringCMDBuildOptionLocaleDescription);
@@ -60,6 +74,7 @@ internal partial class Program
         var parallelCountOption = new Option<int>(["-pc", "--parallel-count"], () => 2, Resources.StringCMDBuildOptionParallelCountDescription);
         var nocacheOption = new Option<bool>(["-nc", "--no-cache"], () => false, Resources.StringCMDBuildOptionNoCacheDescription);
 
+        // 创建 build 命令并添加选项
         var buildCommand = new Command("build", Resources.StringCMDBuildDescription)
         {
             packNameOption,
@@ -72,11 +87,24 @@ internal partial class Program
             nocacheOption,
         };
 
+        // 设置命令处理器
         buildCommand.SetHandler<string, string, string, ContentCompareType, string?, string, bool, int, int?>(BuildLocalizedIntelliSenseFile, packNameOption, monikerOption, localeOption, contentCompareTypeOption, separateLineOption, outputOption, nocacheOption, parallelCountOption, s_logLevelOption);
 
         return buildCommand;
     }
 
+    /// <summary>
+    /// 构建本地化的 IntelliSense 文件
+    /// </summary>
+    /// <param name="packName">包名称</param>
+    /// <param name="moniker">目标框架名称</param>
+    /// <param name="locale">区域设置</param>
+    /// <param name="contentCompareType">内容比较类型</param>
+    /// <param name="separateLine">分隔线内容</param>
+    /// <param name="outputRoot">输出根目录</param>
+    /// <param name="noCache">是否禁用缓存</param>
+    /// <param name="parallelCount">并行处理数量</param>
+    /// <param name="logLevel">日志级别</param>
     private static void BuildLocalizedIntelliSenseFile(string packName,
                                                        string moniker,
                                                        string locale,
@@ -87,11 +115,13 @@ internal partial class Program
                                                        int parallelCount,
                                                        int? logLevel)
     {
+        // 设置默认内容比较类型
         if (contentCompareType == ContentCompareType.Default)
         {
             contentCompareType = ContentCompareType.OriginFirst;
         }
 
+        // 处理区域设置
         locale = string.IsNullOrWhiteSpace(locale) ? LocalizerEnvironment.CurrentLocale : locale;
 
         if (string.IsNullOrWhiteSpace(locale))
@@ -101,6 +131,7 @@ internal partial class Program
             return;
         }
 
+        // 验证区域设置
         CultureInfo cultureInfo;
         try
         {
@@ -113,19 +144,22 @@ internal partial class Program
             throw;
         }
 
+        // 处理包名称，确保以 .Ref 结尾
         if (!string.IsNullOrEmpty(packName)
             && !packName.EndsWith(".Ref", StringComparison.OrdinalIgnoreCase))
         {
             packName = $"{packName}.Ref";
         }
 
+        // 处理输出目录
         outputRoot = string.IsNullOrWhiteSpace(outputRoot) ? LocalizerEnvironment.OutputRoot : outputRoot;
-
         DirectoryUtil.CheckDirectory(outputRoot);
 
+        // 构建过滤器函数
         var packNameFilterFunc = BuildStringFilterFunc(packName);
         var monikerFilterFunc = BuildStringFilterFunc(moniker);
 
+        // 获取所有应用包描述符并过滤
         var applicationPackDescriptors = DotNetEnvironmentUtil.GetAllApplicationPacks().ToArray();
 
         var refDescriptors = applicationPackDescriptors.Where(m => packNameFilterFunc(m.Name))
@@ -138,6 +172,7 @@ internal partial class Program
                                                        .Where(m => m.Culture is null)
                                                        .ToArray();
 
+        // 检查是否有可本地化的文件
         if (!refDescriptors.Any())
         {
             s_logger.LogCritical("Not found localizeable files.");
@@ -150,17 +185,19 @@ internal partial class Program
                                 locale,
                                 contentCompareType);
 
+        // 设置日志级别并开始生成
         SetLogLevel(logLevel);
-
         GenerateAsync().Wait();
 
+        /// <summary>
+        /// 异步生成本地化文件
+        /// </summary>
         async Task GenerateAsync()
         {
             var generator = s_serviceProvider.GetRequiredService<LocalizeIntelliSenseGenerator>();
-
             var parallelOptions = new ParallelOptions() { MaxDegreeOfParallelism = parallelCount };
 
-            //处理文件
+            // 处理文件
             int refCount = 0;
             foreach (var refDescriptor in refDescriptors)
             {
@@ -202,7 +239,7 @@ internal partial class Program
                 });
             }
 
-            //创建压缩文件
+            // 创建压缩文件
             var outputPackNames = refDescriptors.Select(m => $"{m.OwnerMoniker.Moniker}@{locale}@{contentCompareType}").ToHashSet();
             foreach (var outputPackName in outputPackNames)
             {
@@ -217,6 +254,11 @@ internal partial class Program
             }
         }
 
+        /// <summary>
+        /// 获取去重的应用包引用描述符
+        /// </summary>
+        /// <param name="descriptors">描述符集合</param>
+        /// <returns>去重后的描述符</returns>
         static IEnumerable<ApplicationPackRefMonikerDescriptor> GetDistinctApplicationPackRefMonikerDescriptors(IEnumerable<ApplicationPackRefMonikerDescriptor> descriptors)
         {
             var dic = new Dictionary<string, ApplicationPackRefMonikerDescriptor>(StringComparer.OrdinalIgnoreCase);
@@ -228,25 +270,39 @@ internal partial class Program
         }
     }
 
+    /// <summary>
+    /// 打包语言包
+    /// </summary>
+    /// <param name="sourceRootPath">源根路径</param>
+    /// <param name="moniker">目标框架名称</param>
+    /// <param name="locale">区域设置</param>
+    /// <param name="contentCompareType">内容比较类型</param>
+    /// <param name="outputRoot">输出根目录</param>
+    /// <returns>打包后的文件路径</returns>
     private static async Task<string> PackLanguagePackAsync(string sourceRootPath, string moniker, string locale, ContentCompareType contentCompareType, string outputRoot)
     {
         var cultureInfo = CultureInfo.GetCultureInfo(locale);
 
+        // 获取包列表
         var packs = Directory.GetDirectories(sourceRootPath).Select(m => Path.GetFileName(m)).ToList();
 
+        // 创建元数据
         var metadata = new Dictionary<string, string>()
         {
             { "CreateTime", DateTime.UtcNow.ToString("yyyy-mm-dd HH:mm:ss.fff")},
         };
 
+        // 创建语言包清单
         var languagePackManifest = new LanguagePackManifest(LanguagePackManifest.CurrentVersion, moniker, locale, contentCompareType, packs, metadata);
 
+        // 写入清单文件
         await File.WriteAllTextAsync(Path.Combine(sourceRootPath, LanguagePackManifest.ManifestFileName), languagePackManifest.ToJson(), default);
 
+        // 创建打包项目文件
         var packCsprojFullName = Path.Combine(sourceRootPath, PackCsprojFileName);
-
         await File.WriteAllTextAsync(packCsprojFullName, PackCsprojContent, default);
 
+        // 生成版本号并打包
         var langPackVersion = new LangPackVersion(moniker, DateTime.UtcNow, contentCompareType, cultureInfo);
         var nugetVersion = langPackVersion.Encode();
 

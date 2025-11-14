@@ -9,6 +9,10 @@ namespace IntelliSenseLocalizer;
 
 internal partial class Program
 {
+    /// <summary>
+    /// 构建 uninstall 命令
+    /// </summary>
+    /// <returns>配置好的 uninstall 命令</returns>
     private static Command BuildUnInstallCommand()
     {
         var uninstallCommand = new Command("uninstall", Resources.StringCMDUnInstallDescription);
@@ -25,8 +29,15 @@ internal partial class Program
         return uninstallCommand;
     }
 
+    /// <summary>
+    /// 卸载本地化的 IntelliSense 文件
+    /// </summary>
+    /// <param name="moniker">目标框架名称</param>
+    /// <param name="locale">区域设置</param>
+    /// <param name="target">目标 SDK 目录</param>
     private static void UnInstall(string moniker, string locale, string target)
     {
+        // 验证区域设置
         CultureInfo culture;
         try
         {
@@ -39,12 +50,14 @@ internal partial class Program
             throw;
         }
 
+        // 验证目标目录
         var packRoot = DotNetEnvironmentUtil.GetSDKPackRoot(target);
         if (!Directory.Exists(packRoot))
         {
             WriteMessageAndExit($"not found any pack at the target SDK folder {target}. please check input.");
         }
 
+        // 获取所有匹配的包
         var allPack = DotNetEnvironmentUtil.GetAllApplicationPacks(packRoot)
                                            .SelectMany(m => m.Versions)
                                            .SelectMany(m => m.Monikers)
@@ -56,6 +69,7 @@ internal partial class Program
         var count = 0;
         try
         {
+            // 删除文件
             foreach (var item in allPack.SelectMany(m => m.IntelliSenseFiles))
             {
                 File.Delete(item.FilePath);
@@ -70,6 +84,7 @@ internal partial class Program
         }
         Console.WriteLine($"UnInstall Done. {count} item deleted.");
 
+        // 清理空目录
         try
         {
             foreach (var packRefRoot in allPack.Select(m => m.RootPath).Distinct())
@@ -82,6 +97,11 @@ internal partial class Program
             Console.WriteLine(ex);
         }
 
+        /// <summary>
+        /// 递归删除空目录
+        /// </summary>
+        /// <param name="path">目录路径</param>
+        /// <param name="count">递归深度</param>
         static void DeleteEmptyDirectory(string? path, int count)
         {
             if (count > 0

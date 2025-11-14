@@ -11,6 +11,10 @@ internal partial class Program
 {
     #region Private 方法
 
+    /// <summary>
+    /// 构建 translate 命令
+    /// </summary>
+    /// <returns>配置好的 translate 命令</returns>
     private static Command BuildTranslateCommand()
     {
         var fileOption = new Option<string>(["-f", "--file"], Resources.StringCMDTranslateOptionFileDescription);
@@ -51,6 +55,11 @@ internal partial class Program
         return translateCommand;
     }
 
+    /// <summary>
+    /// 获取区域信息
+    /// </summary>
+    /// <param name="locale">区域字符串</param>
+    /// <returns>对应的 CultureInfo 对象</returns>
     private static CultureInfo GetCultureInfo(string locale)
     {
         CultureInfo cultureInfo;
@@ -68,6 +77,19 @@ internal partial class Program
         return cultureInfo;
     }
 
+    /// <summary>
+    /// 翻译本地化的 IntelliSense 文件
+    /// </summary>
+    /// <param name="file">要翻译的 XML 文件路径</param>
+    /// <param name="server">翻译服务器地址</param>
+    /// <param name="fromLocale">源区域设置</param>
+    /// <param name="targetLocalesString">目标区域设置字符串（多个用分号分隔）</param>
+    /// <param name="contentCompareType">内容比较类型</param>
+    /// <param name="separateLine">分隔线内容</param>
+    /// <param name="outputRoot">输出根目录</param>
+    /// <param name="parallelCount">并行处理数量</param>
+    /// <param name="isPatch">是否为补丁模式</param>
+    /// <param name="logLevel">日志级别</param>
     private static void TranslateLocalizedIntelliSenseFile(string file,
                                                            string server,
                                                            string fromLocale,
@@ -79,11 +101,13 @@ internal partial class Program
                                                            bool isPatch,
                                                            int? logLevel)
     {
+        // 设置默认内容比较类型
         if (contentCompareType == ContentCompareType.Default)
         {
             contentCompareType = ContentCompareType.OriginFirst;
         }
 
+        // 验证文件是否存在
         if (!File.Exists(file))
         {
             s_logger.LogCritical("xml file \"{File}\" not found.", file);
@@ -91,6 +115,7 @@ internal partial class Program
             return;
         }
 
+        // 验证服务器地址
         if (string.IsNullOrWhiteSpace(server))
         {
             s_logger.LogCritical("\"server\" must be specified.");
@@ -98,6 +123,7 @@ internal partial class Program
             return;
         }
 
+        // 验证源区域设置
         if (string.IsNullOrWhiteSpace(fromLocale))
         {
             s_logger.LogCritical("\"from-locale\" must be specified.");
@@ -105,8 +131,10 @@ internal partial class Program
             return;
         }
 
+        // 获取源区域信息
         var sourceCultureInfo = GetCultureInfo(fromLocale);
 
+        // 解析目标区域设置
         var targetLocales = string.IsNullOrWhiteSpace(targetLocalesString)
                             ? [LocalizerEnvironment.CurrentLocale]
                             : targetLocalesString.Split(';');
@@ -118,8 +146,10 @@ internal partial class Program
             return;
         }
 
+        // 获取目标区域信息
         var targetCultureInfos = targetLocales.Select(GetCultureInfo).Distinct().ToArray();
 
+        // 设置输出目录
         if (string.IsNullOrWhiteSpace(outputRoot))
         {
             outputRoot = Path.GetDirectoryName(file);
@@ -132,16 +162,22 @@ internal partial class Program
                                 targetLocales,
                                 contentCompareType);
 
+        // 设置日志级别
         SetLogLevel(logLevel);
 
+        // 创建内容翻译器
         using var contentTranslator = new DefaultContentTranslator(server);
 
         TranslateAsync().Wait();
 
+        /// <summary>
+        /// 异步执行翻译任务
+        /// </summary>
         async Task TranslateAsync()
         {
             var translator = s_serviceProvider.GetRequiredService<LocalizeIntelliSenseTranslator>();
 
+            // 为每个目标区域创建翻译任务
             foreach (var targetCultureInfo in targetCultureInfos)
             {
                 var outputDirectory = Path.Combine(outputRoot!, targetCultureInfo.Name);
@@ -149,6 +185,7 @@ internal partial class Program
 
                 var outputPath = Path.Combine(outputDirectory, Path.GetFileName(file));
 
+                // 创建翻译上下文
                 var context = new TranslateContext(file, contentCompareType, separateLine, outputPath, sourceCultureInfo, targetCultureInfo, contentTranslator, isPatch);
 
                 await translator.TranslateAsync(context, default);

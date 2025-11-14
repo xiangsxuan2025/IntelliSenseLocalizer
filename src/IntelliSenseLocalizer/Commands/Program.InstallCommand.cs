@@ -15,6 +15,10 @@ internal partial class Program
 {
     #region Private 方法
 
+    /// <summary>
+    /// 构建 install 命令
+    /// </summary>
+    /// <returns>配置好的 install 命令</returns>
     private static Command BuildInstallCommand()
     {
         var installCommand = new Command("install", Resources.StringCMDInstallDescription);
@@ -117,6 +121,14 @@ internal partial class Program
 
     #region nuget.org
 
+    /// <summary>
+    /// 从 NuGet 安装语言包
+    /// </summary>
+    /// <param name="target">目标目录</param>
+    /// <param name="moniker">目标框架名称</param>
+    /// <param name="locale">区域设置</param>
+    /// <param name="contentCompareType">内容比较类型</param>
+    /// <param name="copyToNugetGlobalCache">是否复制到 NuGet 全局缓存</param>
     private static async Task InstallFromNugetAsync(string target, string moniker, string locale, ContentCompareType contentCompareType, bool copyToNugetGlobalCache)
     {
         try
@@ -125,9 +137,10 @@ internal partial class Program
 
             s_logger.LogInformation("getting nuget index.");
 
+            // 获取 NuGet 索引
             var nugetIndex = await "https://api.nuget.org/v3/index.json".CreateHttpRequest()
-                                                                        .AutoRedirection(true)
-                                                                        .GetAsDynamicJsonAsync();
+                                                                    .AutoRedirection(true)
+                                                                    .GetAsDynamicJsonAsync();
 
             IEnumerable<dynamic> resources = nugetIndex!.resources;
 
@@ -142,8 +155,8 @@ internal partial class Program
             s_logger.LogInformation("querying language pack package.");
 
             var searchQueryResult = await searchQueryUrl.CreateHttpRequest()
-                                                        .AutoRedirection(true)
-                                                        .GetAsDynamicJsonAsync();
+                                                    .AutoRedirection(true)
+                                                    .GetAsDynamicJsonAsync();
 
             IEnumerable<dynamic> searchQueryResultItems = searchQueryResult!.data;
 
@@ -156,6 +169,7 @@ internal partial class Program
 
             IEnumerable<dynamic> versions = targetPacakgeInfo.versions;
 
+            // 查找匹配的版本
             var targetVersionInfo = versions.Reverse().FirstOrDefault(m =>
             {
                 try
@@ -179,14 +193,14 @@ internal partial class Program
 
             var packgetDetailUrl = (string)targetVersionInfo["@id"];
             var packageDetailInfo = await packgetDetailUrl.CreateHttpRequest()
-                                                          .AutoRedirection(true)
-                                                          .GetAsDynamicJsonAsync();
+                                                      .AutoRedirection(true)
+                                                      .GetAsDynamicJsonAsync();
 
             var packageDownloadUrl = (string)packageDetailInfo!.packageContent;
 
             var cacheFile = Path.Combine(LocalizerEnvironment.OutputRoot, Path.GetFileName(packageDownloadUrl));
 
-            //从缓存安装
+            // 从缓存安装
             if (File.Exists(cacheFile))
             {
                 Console.WriteLine($"Install form cache \"{cacheFile}\"");
@@ -215,6 +229,12 @@ internal partial class Program
         }
     }
 
+    /// <summary>
+    /// 检查文化是否适配
+    /// </summary>
+    /// <param name="culture">源文化</param>
+    /// <param name="targetCulture">目标文化</param>
+    /// <returns>如果文化适配返回 true，否则返回 false</returns>
     private static bool IsAdaptCulture(CultureInfo? culture, CultureInfo targetCulture)
     {
         if (culture == null)
@@ -234,11 +254,19 @@ internal partial class Program
 
     #endregion nuget.org
 
+    /// <summary>
+    /// 从 URL 安装语言包
+    /// </summary>
+    /// <param name="downloadUrl">下载 URL</param>
+    /// <param name="target">目标目录</param>
+    /// <param name="copyToNugetGlobalCache">是否复制到 NuGet 全局缓存</param>
+    /// <param name="fileName">文件名</param>
+    /// <returns>下载的数据</returns>
     private static async Task<byte[]?> InstallFromUrlAsync(string downloadUrl, string target, bool copyToNugetGlobalCache, string? fileName = null)
     {
         Console.WriteLine($"Start download {downloadUrl}");
 
-        //直接内存处理，不缓存了
+        // 直接内存处理，不缓存
         using var httpRequestExecuteState = await downloadUrl.CreateHttpRequest().AutoRedirection().UseUserAgent(UserAgents.EdgeChromium).ExecuteAsync();
 
         using var responseMessage = httpRequestExecuteState.HttpResponseMessage;
@@ -255,6 +283,8 @@ internal partial class Program
         var buffer = new byte[102400];
         var lastDisplayTime = DateTime.UtcNow;
         var lastDisplayValue = 0.0;
+
+        // 下载并显示进度
         while (true)
         {
             var readCount = await responseStream.ReadAsync(buffer, 0, buffer.Length);
@@ -298,6 +328,14 @@ internal partial class Program
         return data;
     }
 
+    /// <summary>
+    /// 从 URL 安装语言包（带重试）
+    /// </summary>
+    /// <param name="downloadUrl">下载 URL</param>
+    /// <param name="target">目标目录</param>
+    /// <param name="copyToNugetGlobalCache">是否复制到 NuGet 全局缓存</param>
+    /// <param name="retryCount">重试次数</param>
+    /// <returns>下载的数据</returns>
     private static async Task<byte[]?> InstallFromUrlWithRetryAsync(string downloadUrl, string target, bool copyToNugetGlobalCache, int retryCount = 3)
     {
         do
@@ -324,6 +362,12 @@ internal partial class Program
         throw new InvalidOperationException("Download error");
     }
 
+    /// <summary>
+    /// 从 ZIP 归档安装语言包
+    /// </summary>
+    /// <param name="target">目标目录</param>
+    /// <param name="zipArchive">ZIP 归档</param>
+    /// <param name="copyToNugetGlobalCache">是否复制到 NuGet 全局缓存</param>
     private static void InstallFromZipArchive(string target, ZipArchive zipArchive, bool copyToNugetGlobalCache)
     {
         var manifestEntry = zipArchive.GetEntry(LanguagePackManifest.ManifestFileName);
@@ -340,6 +384,7 @@ internal partial class Program
             WriteMessageAndExit($"not found intellisense files in zipArchive.");
         }
 
+        // 读取清单文件
         using var manifestStream = manifestEntry.Open();
         using var manifestStreamReader = new StreamReader(manifestStream);
         var manifestJson = manifestStreamReader.ReadToEnd();
@@ -355,16 +400,17 @@ internal partial class Program
             WriteMessageAndExit($"not found any pack at the target SDK folder {target}. please check input.");
         }
 
+        // 获取应用包引用
         var applicationPackRefs = DotNetEnvironmentUtil.GetAllApplicationPacks(packRoot)
-                                                       .SelectMany(m => m.Versions)
-                                                       .SelectMany(m => m.Monikers)
-                                                       .Where(m => m.Moniker.EqualsOrdinalIgnoreCase(moniker))
-                                                       .SelectMany(m => m.Refs)
-                                                       .Where(m => m.Culture is null)
-                                                       .ToArray();
+                                                   .SelectMany(m => m.Versions)
+                                                   .SelectMany(m => m.Monikers)
+                                                   .Where(m => m.Moniker.EqualsOrdinalIgnoreCase(moniker))
+                                                   .SelectMany(m => m.Refs)
+                                                   .Where(m => m.Culture is null)
+                                                   .ToArray();
 
         var packEntryGroups = contentEntries.Where(m => m.Name.IsNotNullOrEmpty())
-                                            .GroupBy(m => m.FullName.Contains('/') ? m.FullName.Split('/', StringSplitOptions.RemoveEmptyEntries)[1] : m.FullName.Split('\\', StringSplitOptions.RemoveEmptyEntries)[1])    //路径分隔符可能为 / 或者 \
+                                            .GroupBy(m => m.FullName.Contains('/') ? m.FullName.Split('/', StringSplitOptions.RemoveEmptyEntries)[1] : m.FullName.Split('\\', StringSplitOptions.RemoveEmptyEntries)[1])    // 路径分隔符可能为 / 或者 \
                                             .ToDictionary(m => m.Key, m => m.ToArray(), StringComparer.OrdinalIgnoreCase);
 
         var filesDictionary = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
@@ -374,6 +420,7 @@ internal partial class Program
 
         var nugetGlobalPackages = GlobalPackagesFinder.EnumeratePackages().ToList();
 
+        // 安装到 SDK 包目录
         foreach (var applicationPackRef in applicationPackRefs)
         {
             var versionDescriptor = applicationPackRef.OwnerMoniker.OwnerVersion;
@@ -403,6 +450,7 @@ internal partial class Program
                 count++;
             }
 
+            // 安装到 NuGet 全局缓存
             var nugetRefCaches = nugetGlobalPackages.Where(m => string.Equals(packName, m.NormalizedName, StringComparison.OrdinalIgnoreCase))
                                                     .SelectMany(m => m.Versions)
                                                     .Where(m => m.Version.Major == version.Major && m.Version.Minor == version.Minor)
@@ -425,6 +473,7 @@ internal partial class Program
             }
         }
 
+        // 复制到 NuGet 全局缓存
         if (copyToNugetGlobalCache)
         {
             var foundNugetPackageIntelliSenseFiles = nugetGlobalPackages.Where(m => filesDictionary.ContainsKey(m.NormalizedName))
@@ -453,6 +502,12 @@ internal partial class Program
         Console.WriteLine($"Install done. {count} item copyed. {nugetCount} nuget item copyed.");
     }
 
+    /// <summary>
+    /// 从 ZIP 归档文件安装语言包
+    /// </summary>
+    /// <param name="sourceFile">源文件路径</param>
+    /// <param name="target">目标目录</param>
+    /// <param name="copyToNugetGlobalCache">是否复制到 NuGet 全局缓存</param>
     private static void InstallFromZipArchiveFile(string sourceFile, string target, bool copyToNugetGlobalCache)
     {
         try
@@ -477,6 +532,11 @@ internal partial class Program
         }
     }
 
+    /// <summary>
+    /// 检查路径权限
+    /// </summary>
+    /// <param name="targetPath">目标路径</param>
+    /// <returns>如果权限检查通过返回 false，否则返回 true</returns>
     private static bool PathAuthorityCheck(string targetPath)
     {
         var writeTestPath = Path.Combine(targetPath, ".write_test");
@@ -494,13 +554,14 @@ internal partial class Program
     }
 
     /// <summary>
+    /// 尝试从文件名获取归档包信息
     /// 必须为 net6.0@zh-cn@LocaleFirst 这种格式
     /// </summary>
-    /// <param name="fileName"></param>
-    /// <param name="moniker"></param>
-    /// <param name="locale"></param>
-    /// <param name="contentCompareType"></param>
-    /// <returns></returns>
+    /// <param name="fileName">文件名</param>
+    /// <param name="moniker">目标框架名称</param>
+    /// <param name="locale">区域设置</param>
+    /// <param name="contentCompareType">内容比较类型</param>
+    /// <returns>如果成功解析返回 true，否则返回 false</returns>
     private static bool TryGetArchivePackageInfo(string fileName, out string moniker, out string locale, out ContentCompareType contentCompareType)
     {
         var seg = fileName.Split('@');

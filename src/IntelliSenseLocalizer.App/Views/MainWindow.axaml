@@ -1,61 +1,164 @@
 ﻿<Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="IntelliSenseLocalizer.App.Views.MainWindow"
         xmlns:vm="using:IntelliSenseLocalizer.App.ViewModels"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:system="using:System"
         xmlns:m="using:IntelliSenseLocalizer.App.Models"
         xmlns:c="using:IntelliSenseLocalizer.App.Converters"
-        mc:Ignorable="d" d:DesignWidth="520" d:DesignHeight="230"
-        SizeToContent="WidthAndHeight"
-        x:Class="IntelliSenseLocalizer.App.Views.MainWindow"
+        mc:Ignorable="d"
+        d:DesignWidth="600" d:DesignHeight="650"
+        Width="600" Height="450"
+        MinWidth="550" MinHeight="650"
+        SizeToContent="Manual"
         x:DataType="vm:MainWindowViewModel"
         Icon="/Assets/avalonia-logo.ico"
-        Title="下载本地化的 .NET IntelliSense 文件"
-        CanResize="False"
-        WindowStartupLocation="CenterOwner">
+        Title=".NET IntelliSense 本地化工具"
+        CanResize="True"
+        WindowStartupLocation="CenterOwner"
+        FontFamily="Microsoft YaHei UI">
 
     <Design.DataContext>
-        <!-- This only sets the DataContext for the previewer in an IDE,
-        to set the actual DataContext for runtime, set the DataContext property in code (look at App.axaml.cs) -->
         <vm:MainWindowViewModel/>
     </Design.DataContext>
-    <StackPanel Orientation="Vertical">
-        <Grid ColumnDefinitions="Auto, *" RowDefinitions="Auto, Auto, Auto, Auto">
-            <TextBlock Grid.Row="0" Grid.Column="0"
-                       Text="保留英文方式" />
-            <ComboBox Grid.Row="0" Grid.Column="1"
-                      ItemsSource="{Binding Source={x:Static m:KeepOriginalMode.Supported}}"
-                      SelectedItem="{Binding ContentCompareType, Mode=TwoWay}" >
 
-                <ComboBox.ItemTemplate>
-                    <DataTemplate DataType="m:KeepOriginalMode">
-                        <StackPanel Orientation="Vertical">
-                            <TextBlock  Text="{Binding Desc}" Margin="8,0" FontSize="16"/>
-                            <Image Height="150"  Source="{Binding  Mode, Converter={x:Static c:ModeBitmapConverter.Instance}}" Margin="8,0"/>
-                        </StackPanel>
-                    </DataTemplate>
-                </ComboBox.ItemTemplate>
+    <Window.Styles>
+        <Style Selector="TextBlock.header">
+            <Setter Property="FontSize" Value="16"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Foreground" Value="{DynamicResource ThemeForegroundBrush}"/>
+            <Setter Property="Margin" Value="0,0,0,8"/>
+        </Style>
 
-                <ComboBox.SelectionBoxItemTemplate>
-                    <DataTemplate DataType="m:KeepOriginalMode">
-                        <TextBlock  Text="{Binding Desc}" Margin="8,0" FontSize="11"/>
-                    </DataTemplate>
-                </ComboBox.SelectionBoxItemTemplate>
-            </ComboBox>
-            <TextBlock Grid.Row="1" Grid.Column="0"
-                       Text=".Net版本" />
-            <ComboBox Grid.Row="1" Grid.Column="1"
-                      ItemsSource="{Binding Source={x:Static m:DotNetVersion.Supported}}"
-                      SelectedItem="{Binding DotnetVersion, Mode=TwoWay}" >
+        <Style Selector="TextBlock.subtitle">
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="Foreground" Value="{DynamicResource ThemeForegroundLowBrush}"/>
+            <Setter Property="Margin" Value="0,0,0,16"/>
+        </Style>
 
-            </ComboBox>
+        <Style Selector="ComboBox">
+            <Setter Property="Margin" Value="0,0,0,20"/>
+            <Setter Property="HorizontalAlignment" Value="Stretch"/>
+        </Style>
 
-        </Grid>
-        <Button
-        Classes="flat primary"
-        Content="确定"
-        Command="{Binding StartToTransAsync}"
-        HotKey="Enter"/>
-    </StackPanel>
+        <Style Selector="Button.primary">
+            <Setter Property="Padding" Value="24,12"/>
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="HorizontalAlignment" Value="Center"/>
+            <Setter Property="Margin" Value="0,20,0,0"/>
+        </Style>
+
+        <Style Selector="Border.card">
+            <Setter Property="Background" Value="{DynamicResource ThemeControlMidBrush}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource ThemeBorderLowBrush}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="8"/>
+            <Setter Property="Padding" Value="20"/>
+            <Setter Property="Margin" Value="0,0,0,20"/>
+        </Style>
+    </Window.Styles>
+
+    <Grid RowDefinitions="Auto,*,Auto" Margin="20">
+        <!-- Header -->
+        <StackPanel Grid.Row="0" Margin="0,0,0,20">
+            <TextBlock Text=".NET IntelliSense 本地化工具"
+                       Classes="header"/>
+            <TextBlock Text="为 .NET SDK 安装本地化的智能感知文档，提升中文开发体验"
+                       Classes="subtitle"/>
+        </StackPanel>
+
+        <!-- Content -->
+        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+            <StackPanel Spacing="0">
+                <!-- Display Mode Selection -->
+                <Border Classes="card">
+                    <StackPanel>
+                        <TextBlock Text="英文显示模式"
+                                   Classes="header"/>
+                        <TextBlock Text="选择英文和中文的显示顺序"
+                                   Classes="subtitle"/>
+                        <ComboBox ItemsSource="{Binding Source={x:Static m:KeepOriginalMode.Supported}}"
+                                  SelectedItem="{Binding ContentCompareType, Mode=TwoWay}">
+                            <ComboBox.ItemTemplate>
+                                <DataTemplate DataType="m:KeepOriginalMode">
+                                    <StackPanel Orientation="Horizontal" Spacing="8" Background="Transparent">
+                                        <ToolTip.Tip>
+                                            <StackPanel Spacing="4">
+                                                <Image Width="350"
+                                                       Source="{Binding Mode, Converter={x:Static c:ModeBitmapConverter.Instance}}"
+                                                       HorizontalAlignment="Center"/>
+                                                <TextBlock Text="{Binding DisplayDescription}"
+                                                           FontWeight="SemiBold"
+                                                           HorizontalAlignment="Center"/>
+                                            </StackPanel>
+                                        </ToolTip.Tip>
+                                        <StackPanel Spacing="4">
+                                            <TextBlock Text="{Binding Display}"
+                                                       FontWeight="SemiBold"
+                                                       HorizontalAlignment="Left"/>
+                                            <TextBlock Text="{Binding DisplayDescription}"
+                                                       TextWrapping="Wrap"
+                                                       TextAlignment="Left"/>
+
+                                        </StackPanel>
+                                    </StackPanel>
+                                </DataTemplate>
+                            </ComboBox.ItemTemplate>
+                        </ComboBox>
+                    </StackPanel>
+                </Border>
+
+                <!-- .NET Version Selection -->
+                <Border Classes="card">
+                    <StackPanel>
+                        <TextBlock Text=".NET 版本"
+                                   Classes="header"/>
+                        <TextBlock Text="选择要安装本地化文档的 .NET 版本"
+                                   Classes="subtitle"/>
+                        <ComboBox ItemsSource="{Binding Source={x:Static m:DotNetVersion.Supported}}"
+                                  SelectedItem="{Binding DotnetVersion, Mode=TwoWay}">
+                            <ComboBox.ItemTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding StringFormat='NET {0}'}"
+                                               Margin="8,6"
+                                               FontSize="14"/>
+                                </DataTemplate>
+                            </ComboBox.ItemTemplate>
+                        </ComboBox>
+                    </StackPanel>
+                </Border>
+
+                <!-- Status Information -->
+                <Border Grid.Row="2" Grid.ColumnSpan="3"
+                        Classes="card"
+                        IsVisible="{Binding HasStatusMessage}">
+                    <StackPanel Orientation="Horizontal" Spacing="12" VerticalAlignment="Center">
+                        <ProgressBar Width="20" Height="20" IsIndeterminate="True"
+                                     IsVisible="{Binding IsProcessing}"/>
+                        <TextBlock Text="{Binding StatusMessage}"
+                                   FontSize="13"
+                                   Foreground="{DynamicResource ThemeForegroundBrush}"/>
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+        </ScrollViewer>
+
+        <!-- Actions -->
+        <StackPanel Grid.Row="2" Orientation="Vertical">
+            <Button Content="安装本地化文档"
+                    Classes="primary"
+                    Command="{Binding StartToTransAsync}"
+                    IsEnabled="{Binding !IsProcessing}"
+                    HotKey="Enter"/>
+
+            <TextBlock Text="此操作需要管理员权限，可能会请求 UAC 授权"
+                       FontSize="11"
+                       Foreground="{DynamicResource ThemeForegroundLowBrush}"
+                       HorizontalAlignment="Center"
+                       Margin="0,12,0,0"
+                       TextAlignment="Center"/>
+        </StackPanel>
+    </Grid>
 </Window>

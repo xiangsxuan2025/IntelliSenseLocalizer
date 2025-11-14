@@ -8,9 +8,9 @@
         xmlns:m="using:IntelliSenseLocalizer.App.Models"
         xmlns:c="using:IntelliSenseLocalizer.App.Converters"
         mc:Ignorable="d"
-        d:DesignWidth="600" d:DesignHeight="650"
+        d:DesignWidth="600" d:DesignHeight="550"
         Width="600" Height="450"
-        MinWidth="550" MinHeight="650"
+        MinWidth="550" MinHeight="550"
         SizeToContent="Manual"
         x:DataType="vm:MainWindowViewModel"
         Icon="/Assets/avalonia-logo.ico"
@@ -34,7 +34,7 @@
         <Style Selector="TextBlock.subtitle">
             <Setter Property="FontSize" Value="12"/>
             <Setter Property="Foreground" Value="{DynamicResource ThemeForegroundLowBrush}"/>
-            <Setter Property="Margin" Value="0,0,0,16"/>
+            <Setter Property="Margin" Value="0,0,0,8"/>
         </Style>
 
         <Style Selector="ComboBox">
@@ -55,19 +55,39 @@
             <Setter Property="BorderBrush" Value="{DynamicResource ThemeBorderLowBrush}"/>
             <Setter Property="BorderThickness" Value="1"/>
             <Setter Property="CornerRadius" Value="8"/>
-            <Setter Property="Padding" Value="20"/>
-            <Setter Property="Margin" Value="0,0,0,20"/>
+            <Setter Property="Padding" Value="8"/>
+            <Setter Property="Margin" Value="0,10,0,0"/>
         </Style>
     </Window.Styles>
 
     <Grid RowDefinitions="Auto,*,Auto" Margin="20">
         <!-- Header -->
-        <StackPanel Grid.Row="0" Margin="0,0,0,20">
-            <TextBlock Text=".NET IntelliSense 本地化工具"
-                       Classes="header"/>
-            <TextBlock Text="为 .NET SDK 安装本地化的智能感知文档，提升中文开发体验"
-                       Classes="subtitle"/>
-        </StackPanel>
+        <Border Grid.Row="0"
+                Background="White"
+                BorderThickness="0,0,0,1"
+                BorderBrush="#E0E0E0"
+                Padding="20,20">
+            <Grid ColumnDefinitions="Auto,*,Auto" RowDefinitions="*,Auto">
+                <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="12" VerticalAlignment="Center">
+                    <TextBlock Text=".NET"
+                               FontSize="20"
+                               FontWeight="Bold"
+                               Foreground="{StaticResource DotNetPurpleBrush}"/>
+                    <TextBlock Text="IntelliSense Localizer"
+                               FontSize="20"
+                               FontWeight="Light"
+                               Foreground="{StaticResource TextPrimaryBrush}"/>
+                </StackPanel>
+
+                <TextBlock Grid.Column="2"
+                           Text="{Binding Version}"
+                           FontSize="14"
+                           Foreground="{StaticResource TextPrimary}"
+                           VerticalAlignment="Center"/>
+                <TextBlock Grid.Row="1" Text="为 .NET SDK 安装本地化的智能感知文档，提升中文开发体验"
+                           Classes="subtitle"/>
+            </Grid>
+        </Border>
 
         <!-- Content -->
         <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
@@ -122,6 +142,7 @@
                             <ComboBox.ItemTemplate>
                                 <DataTemplate>
                                     <TextBlock Text="{Binding StringFormat='NET {0}'}"
+                                               FontWeight="SemiBold"
                                                Margin="8,6"
                                                FontSize="14"/>
                                 </DataTemplate>
@@ -130,23 +151,24 @@
                     </StackPanel>
                 </Border>
 
-                <!-- Status Information -->
-                <Border Grid.Row="2" Grid.ColumnSpan="3"
-                        Classes="card"
-                        IsVisible="{Binding HasStatusMessage}">
-                    <StackPanel Orientation="Horizontal" Spacing="12" VerticalAlignment="Center">
-                        <ProgressBar Width="20" Height="20" IsIndeterminate="True"
-                                     IsVisible="{Binding IsProcessing}"/>
-                        <TextBlock Text="{Binding StatusMessage}"
-                                   FontSize="13"
-                                   Foreground="{DynamicResource ThemeForegroundBrush}"/>
-                    </StackPanel>
-                </Border>
+
             </StackPanel>
         </ScrollViewer>
 
         <!-- Actions -->
-        <StackPanel Grid.Row="2" Orientation="Vertical">
+        <StackPanel Grid.Row="2" Orientation="Vertical" >
+            <!-- Status Information -->
+            <Border Grid.Row="2" Grid.ColumnSpan="3"
+                    Classes="card"
+                    IsVisible="{Binding HasStatusMessage}">
+                <StackPanel Orientation="Horizontal" Spacing="12" VerticalAlignment="Center">
+                    <ProgressBar Width="20" Height="20" IsIndeterminate="True"
+                                 IsVisible="{Binding IsProcessing}"/>
+                    <TextBlock Text="{Binding StatusMessage}"
+                               FontSize="13"
+                               Foreground="{DynamicResource ThemeForegroundBrush}"/>
+                </StackPanel>
+            </Border>
             <Button Content="安装本地化文档"
                     Classes="primary"
                     Command="{Binding StartToTransAsync}"
@@ -155,7 +177,7 @@
 
             <TextBlock Text="此操作需要管理员权限，可能会请求 UAC 授权"
                        FontSize="11"
-                       Foreground="{DynamicResource ThemeForegroundLowBrush}"
+                       Foreground="{DynamicResource TextSecondaryBrush}"
                        HorizontalAlignment="Center"
                        Margin="0,12,0,0"
                        TextAlignment="Center"/>

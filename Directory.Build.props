@@ -9,13 +9,13 @@
 
   <!--Package Info-->
   <PropertyGroup>
-    <VersionPrefix>1.2.4</VersionPrefix>
+    <VersionPrefix>1.0.0</VersionPrefix>
 
     <Description>a tool for generate and install Localized IntelliSense files. 用于生成和安装本地化IntelliSense文件的工具。</Description>
 
     <Authors>stratos</Authors>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
-    <PackageProjectUrl>https://github.com/stratosblue/intellisenselocalizer</PackageProjectUrl>
+    <PackageProjectUrl>https://github.com/xiangsxuan2025/intellisenselocalizer</PackageProjectUrl>
 
     <RepositoryType>git</RepositoryType>
     <RepositoryUrl>$(PackageProjectUrl)</RepositoryUrl>

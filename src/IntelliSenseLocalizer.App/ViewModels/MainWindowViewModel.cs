@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics;
+using System.Reflection;
 using System.Text;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -24,7 +25,7 @@ public partial class MainWindowViewModel : ObservableObject
 
             using var proc = new Process();
             proc.StartInfo = CreateProcessStartInfo();
-            
+
             var outputBuilder = new StringBuilder();
             var errorBuilder = new StringBuilder();
 
@@ -34,7 +35,7 @@ public partial class MainWindowViewModel : ObservableObject
                 {
                     outputBuilder.AppendLine(e.Data);
                     Debug.WriteLine($"Output: {e.Data}");
-                    
+
                     // 更新状态信息
                     if (e.Data.Contains("Download") || e.Data.Contains("download"))
                     {
@@ -112,10 +113,10 @@ public partial class MainWindowViewModel : ObservableObject
         start.RedirectStandardError = true;
         start.StandardOutputEncoding = Encoding.UTF8;
         start.StandardErrorEncoding = Encoding.UTF8;
-        
+
         var command = $"dotnet tool install -g islocalizer --version 1.2.4 && " +
                      $"islocalizer install auto -m net{DotnetVersion} -l zh-cn -cc {EnumHelpers.GetEnumMemberName(ContentCompareType.Mode)}";
-        
+
         start.Arguments = $"/C {command}";
 
         return start;
@@ -134,4 +135,12 @@ public partial class MainWindowViewModel : ObservableObject
     private string _statusMessage = "准备就绪";
 
     public bool HasStatusMessage => !string.IsNullOrEmpty(StatusMessage);
+
+
+    public static string Version => s_version.Value;
+    private static readonly Lazy<string> s_version = new Lazy<string>(() =>
+    {
+        var version = Assembly.GetEntryAssembly()?.GetName().Version;
+        return $"v{version?.Major}.{version?.Minor}.{version?.Build}";
+    });
 }

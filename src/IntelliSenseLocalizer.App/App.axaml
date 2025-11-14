@@ -11,4 +11,20 @@
     <Application.Styles>
         <FluentTheme />
     </Application.Styles>
+    <Application.Resources>
+        <!-- .NET 品牌颜色 -->
+        <Color x:Key="DotNetPurple">#512BD4</Color>
+        <Color x:Key="DotNetPurpleDark">#4411CC</Color>
+        <Color x:Key="DotNetPurpleLight">#6C43E0</Color>
+        <Color x:Key="BackgroundGray">#F5F5F5</Color>
+        <Color x:Key="TextPrimary">#1C1C1C</Color>
+        <Color x:Key="TextSecondary">#666666</Color>
+        
+        <SolidColorBrush x:Key="DotNetPurpleBrush" Color="{StaticResource DotNetPurple}"/>
+        <SolidColorBrush x:Key="DotNetPurpleDarkBrush" Color="{StaticResource DotNetPurpleDark}"/>
+        <SolidColorBrush x:Key="DotNetPurpleLightBrush" Color="{StaticResource DotNetPurpleLight}"/>
+        <SolidColorBrush x:Key="BackgroundGrayBrush" Color="{StaticResource BackgroundGray}"/>
+        <SolidColorBrush x:Key="TextPrimaryBrush" Color="{StaticResource TextPrimary}"/>
+        <SolidColorBrush x:Key="TextSecondaryBrush" Color="{StaticResource TextSecondary}"/>
+    </Application.Resources>
 </Application>

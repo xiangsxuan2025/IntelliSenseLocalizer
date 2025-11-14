@@ -67,7 +67,7 @@ public class TranslateContext
     /// <param name="sourceCultureInfo">源区域信息</param>
     /// <param name="targetCultureInfo">目标区域信息</param>
     /// <param name="contentTranslator">内容翻译器实例</param>
-    /// <param name="isPatch">是否为补丁模式</param>
+    /// <param name="isPatch">是否配对？</param>
     public TranslateContext(string filePath, ContentCompareType contentCompareType, string? separateLine, string outputPath, CultureInfo sourceCultureInfo, CultureInfo targetCultureInfo, IContentTranslator contentTranslator, bool isPatch)
     {
         FilePath = filePath;

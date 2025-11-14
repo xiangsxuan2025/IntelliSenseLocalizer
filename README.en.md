@@ -2,11 +2,19 @@
 a tool for generate and install Localized IntelliSense files.
 
 ## intro
-Before `.net6` we can download the localized .NET IntelliSense files from this page - [Download localized .NET IntelliSense files](https://dotnet.microsoft.com/en-us/download/intellisense). But long after `.net6` was released. This page did not add the localized .NET IntelliSense files for `.net6`. According to this [issue](https://github.com/dotnet/docs/issues/27283) in `dotnet/docs` there is no localized .NET IntelliSense files any more - "`Yes, unfortunately, we will no longer be localizing IntelliSense.`". But the [online docs](https://docs.microsoft.com) has the localized descriptions. So this tool was born.
+# IntelliSenseLocalizer
 
-`IntelliSenseLocalizer` use the [online docs](https://docs.microsoft.com) to generate Localized IntelliSense files. This tool will download all api pages and analysis the content to match the origin IntelliSense file content and generate the target `xml`.
+A tool for generating and installing localized IntelliSense files.
 
-Benefit from [online docs](https://docs.microsoft.com)'s nice localization and uniform page layout. This tool can theoretically generate all locale's file. But `when the page layout change this tool cannot automatically adapt to the new layout`.
+## Introduction
+
+Prior to .NET 6, it was possible to download localized .NET IntelliSense files directly from the [official download page](https://dotnet.microsoft.com/en-us/download/intellisense). However, long after the release of .NET 6, the page still did not include localized IntelliSense files for the new version. According to [this issue](https://github.com/dotnet/docs/issues/27283) in the `dotnet/docs` repository, Microsoft confirmed that they would no longer be localizing IntelliSense — stating explicitly: *"Yes, unfortunately, we will no longer be localizing IntelliSense."*
+
+Despite this, the [online documentation](https://docs.microsoft.com) continues to provide localized API descriptions. This gap between the discontinued IntelliSense localization and the availability of localized online content inspired the development of this tool.
+
+`IntelliSenseLocalizer` generates localized IntelliSense files by extracting and processing content from the [online documentation](https://docs.microsoft.com). The tool automatically downloads relevant API pages, analyzes their structure and content to match the original IntelliSense data, and produces the corresponding localized XML files.
+
+Thanks to the comprehensive localization and consistent page layout of the Microsoft Docs website, this tool can theoretically generate IntelliSense files for any supported locale.
 
 ## How to use
 
@@ -17,8 +25,8 @@ dotnet tool install -g islocalizer
 
 #### run `islocalizer -h` to see more command and helps.
 
-Append the argument -h at the end of the command to view the help of the command. eg:
-```shell
+Append the argument -h at the end of the command to view the help of the command. eg:在命令末尾添加参数-h，可以查看命令的帮助信息。例如:
+```shell   “‘壳
 islocalizer install auto -h
 islocalizer cache -h
 ```
@@ -27,7 +35,7 @@ islocalizer cache -h
 
 #### View available packs [Nuget](https://www.nuget.org/packages/IntelliSenseLocalizer.LanguagePack)
 
-This command try get the Localized IntelliSense files from nuget.org what moniker is `net6.0` and locale is `zh-cn`. And install it:
+This command try get the Localized IntelliSense files from nuget.org what moniker is `net6.0` and locale is `zh-cn`. And install it:这个命令尝试从nuget.org获取本地化的智能感知文件，名字是`net6.0`，语言环境是`zh-cn`。然后安装它：
 
 ```shell
 islocalizer install auto -m net6.0 -l zh-cn
@@ -51,3 +59,4 @@ The archive package will be saved in the default output directory. You can found
 islocalizer install {ArchivePackagePath}
 ```
 `ArchivePackagePath` is the path of the archive package that you builded.
+

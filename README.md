@@ -13,8 +13,6 @@
 
 <img src=".\src\IntelliSenseLocalizer.App\Assets\IntellisenseApp-preview.png" style="border-radius:4px" alt="界面">
 
-（你可能没见过这么丑的程序，就用一次，将就下😂 ）
-
 然后，就可以快捷编码啦！
 <img src=".\src\IntelliSenseLocalizer.App\Assets\KeepEnglishAfter.png" style="border-radius:4px" alt="界面">
 

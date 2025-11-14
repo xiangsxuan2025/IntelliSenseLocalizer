@@ -1,4 +1,4 @@
-﻿# 本地化 .NET IntelliSense 文件生成下载器
+﻿# VS .NET IntelliSense 中英文生成下载器 | a tool for generate .net Localized IntelliSense
 
 ## 简介
 `.NET6`之后，智能感知[.NET IntelliSense files](https://dotnet.microsoft.com/en-us/download/intellisense)文件微软[不再发布](https://github.com/dotnet/docs/issues/27283#issuecomment-985736340)。
@@ -22,3 +22,4 @@
 
 ## 2. 其他用户（自行构建、非简体中文用户）
 请参考[How to use脚本说明](https://github.com/stratosblue/IntelliSenseLocalizer/blob/main/README.md#how-to-use)，运行爬取程序、更新。
+
